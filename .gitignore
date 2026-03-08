@@ -1,0 +1,55 @@
+# ─── Python ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# 虚拟环境
+venv/
+.venv/
+env/
+ENV/
+
+# ─── Node / Frontend ──────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── 环境变量 ──────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── 编辑器 ────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── 上传文件 ──────────────────────────────────────────
+server/uploads/
+
+# ─── CLI 构建产物 ──────────────────────────────────────
+cli/dist/

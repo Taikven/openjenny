@@ -1,0 +1,29 @@
+{
+  "name": "openjenny",
+  "version": "1.0.0",
+  "description": "OpenJenny CLI - 团队 Skill 安装工具",
+  "main": "dist/index.js",
+  "bin": {
+    "openjenny": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["openjenny", "skill", "cli"],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "chalk": "^5.4.1",
+    "commander": "^14.0.0",
+    "conf": "^13.1.0",
+    "inquirer": "^12.6.0",
+    "ora": "^8.2.0",
+    "extract-zip": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.2"
+  }
+}
