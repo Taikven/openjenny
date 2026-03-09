@@ -39,6 +39,10 @@ export default function UploadPage() {
       toast.error('只支持 .zip / .tar.gz / .md 文件')
       return
     }
+    if (f.size === 0) {
+      toast.error('文件内容为空，请选择有效文件')
+      return
+    }
     setFile(f)
   }
 
@@ -66,6 +70,14 @@ export default function UploadPage() {
       toast.error('请填写 Skill 标识名和显示名称')
       return
     }
+    if (!file) {
+      toast.error('请上传 Skill 文件')
+      return
+    }
+    if (file.size === 0) {
+      toast.error('文件内容为空，请选择有效文件')
+      return
+    }
     const fd = new FormData()
     Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
     if (tags.length) fd.append('tags', tags.join(','))
@@ -84,7 +96,8 @@ export default function UploadPage() {
         {/* File upload */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Skill 文件 <span className="text-gray-500 font-normal">（.zip / .tar.gz / .md，可选）</span>
+            Skill 文件 <span className="text-red-400">*</span>
+            <span className="text-gray-500 font-normal">（.zip / .tar.gz / .md）</span>
           </label>
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}

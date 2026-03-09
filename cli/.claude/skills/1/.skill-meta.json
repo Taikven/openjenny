@@ -1,0 +1,9 @@
+{
+  "name": "1",
+  "display_name": "1",
+  "version": "1.0.0",
+  "agent": "claude",
+  "scope": "local",
+  "dir": "D:\\openjenny\\cli\\.claude\\skills\\1",
+  "installed_at": "2026-03-09T06:35:15.132Z"
+}

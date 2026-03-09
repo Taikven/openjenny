@@ -46,10 +46,6 @@ def get_user_by_username(username: str, db: Session = Depends(get_db)):
 
 @router.patch("/me", response_model=UserOut)
 def update_me(body: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if body.bio is not None:
-        current_user.bio = body.bio
-    if body.avatar is not None:
-        current_user.avatar = body.avatar
     db.commit()
     db.refresh(current_user)
     return current_user

@@ -1,6 +1,7 @@
 {
   "name": "openjenny",
   "version": "1.0.0",
+  "type": "module",
   "description": "OpenJenny CLI - 团队 Skill 安装工具",
   "main": "dist/index.js",
   "bin": {

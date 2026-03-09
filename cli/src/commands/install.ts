@@ -118,7 +118,10 @@ export const installCommand = new Command('install')
         if (err.response?.status === 404) {
           spinner.fail(`${chalk.red('✗')} Skill ${chalk.cyan(skillName)} 不存在`)
         } else {
-          spinner.fail(`${chalk.red('✗')} 安装 ${skillName} 失败: ${err.message}`)
+          const detail = err.response?.data
+            ? JSON.stringify(err.response.data)
+            : err.message || String(err)
+          spinner.fail(`${chalk.red('✗')} 安装 ${chalk.cyan(skillName)} 失败: ${detail}`)
         }
       }
     }

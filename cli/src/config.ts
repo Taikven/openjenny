@@ -10,7 +10,7 @@ interface ConfigSchema {
 export const conf = new Conf<ConfigSchema>({
   projectName: 'openjenny',
   defaults: {
-    server_url: 'http://localhost:8001',
+    server_url: 'http://localhost:8669',
     token: '',
     install_dir_local: '.jenny/skills',
     install_dir_global: `${process.env.HOME || process.env.USERPROFILE}/.jenny/skills`,

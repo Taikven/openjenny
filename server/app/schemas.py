@@ -17,8 +17,6 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
-    avatar: Optional[str] = None
-    bio: Optional[str] = None
     is_admin: bool = False
     created_at: datetime
 
@@ -27,8 +25,7 @@ class UserOut(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    bio: Optional[str] = None
-    avatar: Optional[str] = None
+    pass
 
 
 class Token(BaseModel):
@@ -75,7 +72,6 @@ class SkillVersionOut(BaseModel):
 class AuthorOut(BaseModel):
     id: int
     username: str
-    avatar: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -150,6 +146,13 @@ class CommentOut(BaseModel):
     parent_id: Optional[int] = None
     replies: List["CommentOut"] = []
     created_at: datetime
+
+    @field_validator("replies", mode="before")
+    @classmethod
+    def coerce_replies(cls, v):
+        if v is None:
+            return []
+        return v
 
     class Config:
         from_attributes = True

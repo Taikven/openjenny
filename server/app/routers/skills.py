@@ -1,6 +1,5 @@
 import os
 import re
-import shutil
 import zipfile
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
@@ -22,17 +21,8 @@ def make_slug(name: str) -> str:
     return re.sub(r"[^a-z0-9\-_]", "-", name.lower())
 
 
-# ─── 获取 Skill 列表 ────────────────────────────────────
-@router.get("", response_model=SkillListResponse)
-def list_skills(
-    q: Optional[str] = Query(None),
-    tag: Optional[str] = Query(None),
-    author: Optional[str] = Query(None),
-    sort: str = Query("created_at", enum=["created_at", "download_count"]),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1, le=100),
-    db: Session = Depends(get_db),
-):
+def _build_skill_query(db: Session, q: Optional[str], search_mode: str, tag: Optional[str], author: Optional[str]):
+    """构建 Skill 查询，复用于列表和全量名称接口"""
     query = db.query(Skill).filter(Skill.status == "approved")
 
     if author:
@@ -43,15 +33,46 @@ def list_skills(
             query = query.filter(False)
 
     if q:
-        query = query.filter(
-            or_(
-                Skill.display_name.ilike(f"%{q}%"),
-                Skill.description.ilike(f"%{q}%"),
-                Skill.tags.ilike(f"%{q}%"),
+        if search_mode == "exact_tag":
+            # 精确标签匹配：标签列表中存在完全相同的标签
+            query = query.filter(
+                or_(
+                    Skill.tags == q,
+                    Skill.tags.ilike(f"{q},%"),
+                    Skill.tags.ilike(f"%,{q}"),
+                    Skill.tags.ilike(f"%,{q},%"),
+                )
             )
-        )
+        else:
+            # 默认模糊搜索
+            query = query.filter(
+                or_(
+                    Skill.display_name.ilike(f"%{q}%"),
+                    Skill.name.ilike(f"%{q}%"),
+                    Skill.description.ilike(f"%{q}%"),
+                    Skill.tags.ilike(f"%{q}%"),
+                )
+            )
+
     if tag:
         query = query.filter(Skill.tags.ilike(f"%{tag}%"))
+
+    return query
+
+
+# ─── 获取 Skill 列表 ────────────────────────────────────
+@router.get("", response_model=SkillListResponse)
+def list_skills(
+    q: Optional[str] = Query(None),
+    search_mode: str = Query("fuzzy", enum=["fuzzy", "exact_tag"]),
+    tag: Optional[str] = Query(None),
+    author: Optional[str] = Query(None),
+    sort: str = Query("created_at", enum=["created_at", "download_count"]),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(12, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    query = _build_skill_query(db, q, search_mode, tag, author)
 
     total = query.count()
     items = query.order_by(getattr(Skill, sort).desc()) \
@@ -65,6 +86,20 @@ def list_skills(
         "page_size": page_size,
         "total_pages": math.ceil(total / page_size),
     }
+
+
+# ─── 获取精确搜索全部 Skill 名称（用于安装全部）──────────
+@router.get("/query/exact-search")
+def get_exact_search(
+    q: Optional[str] = Query(None),
+    search_mode: str = Query("exact_tag", enum=["exact_tag"]),
+    tag: Optional[str] = Query(None),
+    author: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    query = _build_skill_query(db, q, search_mode, tag, author)
+    skills = query.with_entities(Skill.name).all()
+    return {"names": [s.name for s in skills], "total": len(skills)}
 
 
 # ─── 上传 Skill ────────────────────────────────────────
@@ -101,9 +136,14 @@ async def create_skill(
         if ext not in [".zip", ".md", ".tar", ".gz"]:
             raise HTTPException(400, "仅支持 .zip / .tar.gz / .md 文件")
 
+        # 读取内容，检查是否为空
+        content = await file.read()
+        if len(content) == 0:
+            raise HTTPException(400, "文件内容为空，请上传有效文件")
+
         save_path = os.path.join(skill_dir, filename)
         with open(save_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
+            f.write(content)
 
         file_path = save_path
         file_type = "md" if ext == ".md" else "zip"
@@ -184,12 +224,15 @@ async def update_skill(
         skill.tags = tags
 
     if file and new_version:
+        content = await file.read()
+        if len(content) == 0:
+            raise HTTPException(400, "文件内容为空，请上传有效文件")
         skill_dir = os.path.join(settings.UPLOAD_DIR, name, new_version)
         os.makedirs(skill_dir, exist_ok=True)
         filename = file.filename or "upload"
         save_path = os.path.join(skill_dir, filename)
         with open(save_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
+            f.write(content)
         skill.version = new_version
         skill.file_path = save_path
         ext = os.path.splitext(filename)[1].lower()

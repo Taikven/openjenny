@@ -64,6 +64,9 @@ export const skillsApi = {
       skill_names,
     }).then((r) => r.data),
 
+  getExactNames: (params: { q?: string; search_mode?: string; tag?: string; author?: string }) =>
+    api.get<{ names: string[]; total: number }>('/skills/query/exact-search', { params }).then((r) => r.data),
+
   downloadUrl: (name: string, version?: string) =>
     `/api/skills/${name}/download${version ? `?version=${version}` : ''}`,
 }

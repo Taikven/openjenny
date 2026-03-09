@@ -91,4 +91,10 @@ class Comment(Base):
 
     skill = relationship("Skill", back_populates="comments")
     user = relationship("User", back_populates="comments")
-    replies = relationship("Comment", backref="parent", remote_side=[id])
+    replies = relationship(
+        "Comment",
+        primaryjoin="Comment.parent_id == Comment.id",
+        foreign_keys="Comment.parent_id",
+        lazy="select",
+        uselist=True,
+    )

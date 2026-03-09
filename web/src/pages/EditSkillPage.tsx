@@ -63,6 +63,10 @@ export default function EditSkillPage() {
       toast.error('只支持 .zip / .tar.gz / .md 文件')
       return
     }
+    if (f.size === 0) {
+      toast.error('文件内容为空，请选择有效文件')
+      return
+    }
     setFile(f)
   }
 
@@ -88,6 +92,10 @@ export default function EditSkillPage() {
     e.preventDefault()
     if (!form.display_name) {
       toast.error('请填写显示名称')
+      return
+    }
+    if (file && file.size === 0) {
+      toast.error('文件内容为空，请选择有效文件')
       return
     }
     const fd = new FormData()

@@ -9,6 +9,20 @@ import { useAuthStore } from '../lib/store'
 import InstallCommandModal from '../components/InstallCommandModal'
 import toast from 'react-hot-toast'
 
+// 渲染评论内容，高亮开头的 @username
+function renderContent(content: string) {
+  const match = content.match(/^(@\S+)\s(.*)$/s)
+  if (match) {
+    return (
+      <span>
+        <span className="text-sky-400 font-medium">{match[1]}</span>
+        {' '}{match[2]}
+      </span>
+    )
+  }
+  return <span>{content}</span>
+}
+
 export default function SkillDetailPage() {
   const { name } = useParams<{ name: string }>()
   const navigate = useNavigate()
@@ -47,8 +61,10 @@ export default function SkillDetailPage() {
   })
 
   const commentMutation = useMutation({
-    mutationFn: ({ content, parent_id }: { content: string; parent_id?: number }) =>
-      commentsApi.add(name!, content, parent_id),
+    mutationFn: ({ content, parent_id }: { content: string; parent_id?: number }) => {
+      const finalContent = replyTo ? `@${replyTo.username} ${content}` : content
+      return commentsApi.add(name!, finalContent, parent_id)
+    },
     onSuccess: () => {
       setCommentText('')
       setReplyTo(null)
@@ -256,7 +272,7 @@ export default function SkillDetailPage() {
                 className="flex-1 px-4 py-3 bg-gray-950 border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/30 resize-none transition-colors"
               />
             </div>
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-start mt-2">
               <button
                 onClick={() => commentMutation.mutate({ content: commentText, parent_id: replyTo?.id })}
                 disabled={!commentText.trim()}
@@ -269,7 +285,7 @@ export default function SkillDetailPage() {
 
         <div className="space-y-4">
           {Array.isArray(comments) && comments.length === 0 && (
-            <p className="text-gray-400 text-sm text-center py-4">暂无评论，成为第一个评论者</p>
+            <p className="text-gray-400 text-sm py-4">暂无评论，成为第一个评论者</p>
           )}
           {Array.isArray(comments) && comments.map((c: any) => (
             <div key={c.id} className="space-y-3">
@@ -282,7 +298,7 @@ export default function SkillDetailPage() {
                     <span className="text-sm font-medium text-white">{c.user.username}</span>
                     <span className="text-xs text-gray-500">{new Date(c.created_at).toLocaleString('zh-CN')}</span>
                   </div>
-                  <p className="text-sm text-gray-300 leading-relaxed">{c.content}</p>
+                  <p className="text-sm text-gray-300 leading-relaxed">{renderContent(c.content)}</p>
                   <div className="flex items-center gap-3 mt-1.5">
                     {isLoggedIn() && (
                       <button onClick={() => setReplyTo({ id: c.id, username: c.user.username })}
@@ -309,7 +325,17 @@ export default function SkillDetailPage() {
                           <span className="text-sm font-medium text-white">{r.user.username}</span>
                           <span className="text-xs text-gray-500">{new Date(r.created_at).toLocaleString('zh-CN')}</span>
                         </div>
-                        <p className="text-sm text-gray-300">{r.content}</p>
+                        <p className="text-sm text-gray-300">{renderContent(r.content)}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          {isLoggedIn() && (
+                            <button onClick={() => setReplyTo({ id: c.id, username: r.user.username })}
+                              className="text-xs text-gray-400 hover:text-sky-500 transition-colors">回复</button>
+                          )}
+                          {(user?.id === r.user.id || user?.is_admin) && (
+                            <button onClick={() => deleteCommentMutation.mutate(r.id)}
+                              className="text-xs text-gray-400 hover:text-red-500 transition-colors">删除</button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -1,0 +1,9 @@
+{
+  "name": "qwe",
+  "display_name": "qwe",
+  "version": "1.0.0",
+  "agent": "claude",
+  "scope": "local",
+  "dir": "D:\\openjenny\\cli\\.claude\\skills\\qwe",
+  "installed_at": "2026-03-09T06:35:15.105Z"
+}
