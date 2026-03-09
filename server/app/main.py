@@ -12,7 +12,7 @@ from .config import settings
 Base.metadata.create_all(bind=engine)
 
 # 确保上传目录存在
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.upload_dir_abs, exist_ok=True)
 
 app = FastAPI(
     title="OpenJenny API",
@@ -34,8 +34,8 @@ app.include_router(interactions.router, prefix="/api")
 app.include_router(misc.router, prefix="/api")
 
 # 静态文件服务（上传的文件）
-if os.path.exists(settings.UPLOAD_DIR):
-    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+if os.path.exists(settings.upload_dir_abs):
+    app.mount("/uploads", StaticFiles(directory=settings.upload_dir_abs), name="uploads")
 
 
 @app.get("/")

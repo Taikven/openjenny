@@ -126,8 +126,8 @@ async def create_skill(
     readme_content = None
 
     if file:
-        os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-        skill_dir = os.path.join(settings.UPLOAD_DIR, name, version)
+        os.makedirs(settings.upload_dir_abs, exist_ok=True)
+        skill_dir = os.path.join(settings.upload_dir_abs, name, version)
         os.makedirs(skill_dir, exist_ok=True)
 
         filename = file.filename or "upload"
@@ -227,7 +227,7 @@ async def update_skill(
         content = await file.read()
         if len(content) == 0:
             raise HTTPException(400, "文件内容为空，请上传有效文件")
-        skill_dir = os.path.join(settings.UPLOAD_DIR, name, new_version)
+        skill_dir = os.path.join(settings.upload_dir_abs, name, new_version)
         os.makedirs(skill_dir, exist_ok=True)
         filename = file.filename or "upload"
         save_path = os.path.join(skill_dir, filename)
