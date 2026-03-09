@@ -21,10 +21,26 @@ export default function InstallCommandModal({ skillNames, onClose }: Props) {
   }, [])
 
   const copy = async () => {
-    await navigator.clipboard.writeText(command)
-    setCopied(true)
-    toast.success('已复制到剪贴板')
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(command)
+      } else {
+        // 降级方案：非 HTTPS 环境（如内网 http 部署）
+        const ta = document.createElement('textarea')
+        ta.value = command
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
+      setCopied(true)
+      toast.success('已复制到剪贴板')
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error('复制失败，请手动选择文本复制')
+    }
   }
 
   return (

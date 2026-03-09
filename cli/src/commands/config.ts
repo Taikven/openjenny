@@ -16,6 +16,20 @@ configCommand
   })
 
 configCommand
+  .command('set <key> <value>')
+  .description('设置任意配置项（key: server_url | install_dir_local | install_dir_global）')
+  .action((key: string, value: string) => {
+    const allowed = ['server_url', 'install_dir_local', 'install_dir_global']
+    if (!allowed.includes(key)) {
+      console.log(chalk.red(`  ✗ 不支持的配置项: ${key}`))
+      console.log(chalk.gray(`  可用配置项: ${allowed.join(' | ')}\n`))
+      return
+    }
+    conf.set(key as any, value)
+    console.log(chalk.green(`  ✓ ${key} 已设置为: ${value}\n`))
+  })
+
+configCommand
   .command('login')
   .description('登录并保存 Token')
   .action(async () => {

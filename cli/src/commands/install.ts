@@ -6,6 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import { createApiClient } from '../api.js'
 import { getAgentConfig, listSupportedAgents } from '../agents.js'
+import { getServerUrl } from '../config.js'
 import extractZip from 'extract-zip'
 
 export const installCommand = new Command('install')
@@ -118,10 +119,22 @@ export const installCommand = new Command('install')
         if (err.response?.status === 404) {
           spinner.fail(`${chalk.red('✗')} Skill ${chalk.cyan(skillName)} 不存在`)
         } else {
-          const detail = err.response?.data
-            ? JSON.stringify(err.response.data)
-            : err.message || String(err)
+          let detail: string
+          if (err.response?.data) {
+            detail = JSON.stringify(err.response.data)
+          } else if (err.code === 'ECONNREFUSED' || err.cause?.code === 'ECONNREFUSED') {
+            detail = `无法连接服务器 ${api.defaults.baseURL}，请确认服务已启动且地址正确`
+          } else if (err.code === 'ENOTFOUND' || err.cause?.code === 'ENOTFOUND') {
+            detail = `域名解析失败，请检查 server_url 配置`
+          } else if (err.errors) {
+            // AggregateError：提取内部所有子错误信息
+            detail = (err.errors as Error[]).map((e) => e.message || String(e)).join('; ')
+          } else {
+            detail = err.message || String(err)
+          }
           spinner.fail(`${chalk.red('✗')} 安装 ${chalk.cyan(skillName)} 失败: ${detail}`)
+          console.log(chalk.gray(`  当前 server_url: ${getServerUrl()}`))
+          console.log(chalk.gray(`  可通过 openjenny config set server_url <地址> 修改`))
         }
       }
     }
