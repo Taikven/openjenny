@@ -59,6 +59,9 @@ export const skillsApi = {
   delete: (name: string) =>
     api.delete(`/skills/${name}`),
 
+  updateTags: (name: string, tags: string) =>
+    api.patch<Skill>(`/skills/${name}/tags`, { tags }).then((r) => r.data),
+
   getInstallCommand: (skill_names: string[]) =>
     api.post<{ command: string; skills: string[] }>('/skills/install-command', {
       skill_names,

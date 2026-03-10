@@ -265,6 +265,25 @@ def delete_skill(
     db.commit()
 
 
+# ─── 单独更新标签（不创建新版本）─────────────────────────
+@router.patch("/{name}/tags")
+def update_skill_tags(
+    name: str,
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    skill = db.query(Skill).filter(Skill.name == name).first()
+    if not skill:
+        raise HTTPException(404, "Skill 不存在")
+    if skill.author_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(403, "无权限修改")
+    skill.tags = body.get("tags", "")
+    db.commit()
+    db.refresh(skill)
+    return skill
+
+
 # ─── 下载 Skill ────────────────────────────────────────
 @router.get("/{name}/download")
 def download_skill(name: str, version: Optional[str] = None, db: Session = Depends(get_db)):

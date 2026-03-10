@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Download, ThumbsUp, Tag, ArrowLeft, Terminal, Archive, FileText, User, Calendar, RefreshCw, Trash2, X } from 'lucide-react'
+import { Download, ThumbsUp, Tag, ArrowLeft, Terminal, Archive, FileText, User, Calendar, RefreshCw, Trash2, X, Pencil, Check, Plus } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { skillsApi, likesApi, commentsApi } from '../lib/services'
@@ -32,6 +32,10 @@ export default function SkillDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [replyTo, setReplyTo] = useState<{ id: number; username: string } | null>(null)
   const [tab, setTab] = useState<'guide' | 'versions'>('guide')
+  const [editingTags, setEditingTags] = useState(false)
+  const [tagInput, setTagInput] = useState('')
+  const [draftTags, setDraftTags] = useState<string[]>([])
+  const tagInputRef = useRef<HTMLInputElement>(null)
 
   const { data: skill, isLoading } = useQuery({
     queryKey: ['skill', name],
@@ -86,6 +90,34 @@ export default function SkillDetailPage() {
       navigate('/')
     },
   })
+
+  const updateTagsMutation = useMutation({
+    mutationFn: (tags: string) => skillsApi.updateTags(name!, tags),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['skill', name] })
+      setEditingTags(false)
+      toast.success('标签已更新')
+    },
+    onError: () => toast.error('更新失败'),
+  })
+
+  const startEditTags = () => {
+    setDraftTags(skill?.tags ? skill.tags.split(',').map((t) => t.trim()).filter(Boolean) : [])
+    setTagInput('')
+    setEditingTags(true)
+    setTimeout(() => tagInputRef.current?.focus(), 50)
+  }
+
+  const addDraftTag = () => {
+    const v = tagInput.trim()
+    if (v && !draftTags.includes(v)) setDraftTags((prev) => [...prev, v])
+    setTagInput('')
+    tagInputRef.current?.focus()
+  }
+
+  const removeDraftTag = (t: string) => setDraftTags((prev) => prev.filter((x) => x !== t))
+
+  const saveTags = () => updateTagsMutation.mutate(draftTags.join(','))
 
   if (isLoading) return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-pulse space-y-4">
@@ -160,15 +192,60 @@ export default function SkillDetailPage() {
         )}
 
         {/* Tags */}
-        {tagList.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {tagList.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                <Tag size={11} />{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="mt-4">
+          {editingTags ? (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {draftTags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    <Tag size={11} />{tag}
+                    <button onClick={() => removeDraftTag(tag)} className="ml-0.5 hover:text-white">
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+                <div className="inline-flex items-center gap-1 rounded-full border border-dashed border-sky-500/40 bg-sky-500/5 pl-2 pr-1 py-0.5">
+                  <input
+                    ref={tagInputRef}
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addDraftTag() }
+                    }}
+                    placeholder="输入标签后回车"
+                    className="bg-transparent text-sm text-sky-400 placeholder-sky-500/40 outline-none w-28"
+                  />
+                  <button onClick={addDraftTag} className="text-sky-500/60 hover:text-sky-400"><Plus size={13} /></button>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-1">
+                <button onClick={saveTags} disabled={updateTagsMutation.isPending}
+                  className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs bg-sky-500 hover:bg-sky-400 text-white font-medium transition-colors disabled:opacity-50">
+                  <Check size={12} /> 保存
+                </button>
+                <button onClick={() => setEditingTags(false)}
+                  className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
+                  <X size={12} /> 取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {tagList.map((tag) => (
+                <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  <Tag size={11} />{tag}
+                </span>
+              ))}
+              {tagList.length === 0 && <span className="text-sm text-gray-600">暂无标签</span>}
+              {canEdit && (
+                <button onClick={startEditTags}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-white/5 hover:bg-white/10 text-gray-500 hover:text-gray-300 border border-transparent hover:border-white/10 transition-colors">
+                  <Pencil size={11} /> 编辑标签
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Meta */}
         <div className="flex flex-wrap gap-5 mt-5 pt-4 border-t border-white/5 text-sm text-gray-500">
