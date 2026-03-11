@@ -1,6 +1,7 @@
+import io
 import os
 import re
-import zipfile
+import zipfile as _zipfile
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
@@ -308,7 +309,22 @@ def download_skill(name: str, version: Optional[str] = None, db: Session = Depen
     skill.download_count += 1
     db.commit()
 
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, StreamingResponse
+
+    # .md 文件动态打包成 zip 再返回，CLI 侧始终拿到 zip
+    if file_path.lower().endswith('.md'):
+        md_filename = os.path.basename(file_path)
+        zip_filename = os.path.splitext(md_filename)[0] + '.zip'
+        buf = io.BytesIO()
+        with _zipfile.ZipFile(buf, 'w', _zipfile.ZIP_DEFLATED) as zf:
+            zf.write(file_path, md_filename)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type='application/zip',
+            headers={'Content-Disposition': f'attachment; filename="{zip_filename}"'},
+        )
+
     return FileResponse(
         path=file_path,
         filename=os.path.basename(file_path),
