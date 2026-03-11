@@ -154,7 +154,7 @@ async def create_skill(
                 readme_content = f.read()
         elif ext == ".zip":
             try:
-                with zipfile.ZipFile(save_path, "r") as zf:
+                with _zipfile.ZipFile(save_path, "r") as zf:
                     for name_in_zip in zf.namelist():
                         if name_in_zip.lower() in ["readme.md", "readme.txt"]:
                             readme_content = zf.read(name_in_zip).decode("utf-8", errors="ignore")
@@ -314,7 +314,7 @@ def download_skill(name: str, version: Optional[str] = None, db: Session = Depen
     # .md 文件动态打包成 zip 再返回，CLI 侧始终拿到 zip
     if file_path.lower().endswith('.md'):
         md_filename = os.path.basename(file_path)
-        zip_filename = os.path.splitext(md_filename)[0] + '.zip'
+        zip_filename = f"{skill.name}.zip"   # 统一用 skill name 命名
         buf = io.BytesIO()
         with _zipfile.ZipFile(buf, 'w', _zipfile.ZIP_DEFLATED) as zf:
             zf.write(file_path, md_filename)
